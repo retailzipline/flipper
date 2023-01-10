@@ -24,7 +24,7 @@ module Flipper
       end
     end
 
-    initializer "flipper.log", after: :load_config_initializers do |app|
+    initializer "flipper.log", after: "flipper.default" do |app|
       flipper = app.config.flipper
 
       if flipper.log && flipper.instrumenter == ActiveSupport::Notifications
@@ -32,7 +32,7 @@ module Flipper
       end
     end
 
-    initializer "flipper.memoizer", after: :load_config_initializers do |app|
+    initializer "flipper.memoizer", after: "flipper.default" do |app|
       flipper = app.config.flipper
 
       if flipper.memoize
