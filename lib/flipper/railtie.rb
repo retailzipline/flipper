@@ -10,37 +10,31 @@ module Flipper
       )
     end
 
-    initializer "flipper.identifier" do
-      ActiveSupport.on_load(:active_record) do
-        ActiveRecord::Base.include Flipper::Identifier
-      end
-    end
-
-    initializer "flipper.default", before: :load_config_initializers do |app|
+    config.before_initialize do |app|
       Flipper.configure do |config|
         config.default do
           Flipper.new(config.adapter, instrumenter: app.config.flipper.instrumenter)
         end
       end
-    end
 
-    initializer "flipper.log", after: "flipper.default" do |app|
-      flipper = app.config.flipper
-
-      if flipper.log && flipper.instrumenter == ActiveSupport::Notifications
-        require "flipper/instrumentation/log_subscriber"
+      ActiveSupport.on_load(:active_record) do
+        ActiveRecord::Base.include Flipper::Identifier
       end
     end
 
-    initializer "flipper.memoizer", after: "flipper.default" do |app|
+    initializer "flipper.memoizer" do |app|
       flipper = app.config.flipper
 
-      if flipper.memoize
-        app.middleware.use Flipper::Middleware::Memoizer, {
-          env_key: flipper.env_key,
-          preload: flipper.preload,
-          if: flipper.memoize.respond_to?(:call) ? flipper.memoize : nil
-        }
+      app.middleware.use Flipper::Middleware::Memoizer, {
+        env_key: flipper.env_key,
+        preload: flipper.preload,
+        if: flipper.memoize.respond_to?(:call) ? flipper.memoize : nil
+      }
+    end
+
+    config.after_initialize do
+      if config.flipper.log && config.flipper.instrumenter == ActiveSupport::Notifications
+        require "flipper/instrumentation/log_subscriber"
       end
     end
   end
